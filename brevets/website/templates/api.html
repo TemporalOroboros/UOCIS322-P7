@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+
+<html>
+   <head>
+      <title>REST API Interface</title>
+      <meta charset="utf-8">
+      <!-- 'viewport' is used by bootstrap to respond to device size -->
+      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+      <!-- Bootstrap includes javascript and css  (must follow jquery) -->
+      <link
+         rel="stylesheet"
+         href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+         integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l"
+         crossorigin="anonymous">
+      <link
+         rel="stylesheet"
+         href="{{ url_for('static', filename='css/api.css') }}">
+      <!-- Javascript:  JQuery from a content distribution network (CDN) -->
+      <script
+         src="https://code.jquery.com/jquery-3.5.1.min.js"
+         integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+         crossorigin="anonymous"></script>
+      <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+         integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+         crossorigin="anonymous"></script>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"
+         integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF"
+         crossorigin="anonymous"></script>
+      <!-- moment.js is the JavaScript equivalent of arrow.py -->
+      <script
+      src="{{ url_for('static', filename='js/moment.min.js') }}"></script>
+   </head>
+   <body>
+      <div class='container'>
+         <h1>REST API Inteface:</h1>
+         <p>An iterface to test the RESTful API</p>
+         <hr />
+         <div class='row'>
+            <div class='col-sm-4 form-holder'>
+               <form>
+                  <div>
+                     <label>Return values:</label><br />
+                     <input name='ret_open' id='ret_open' type='checkbox' value='open' /><label for='ret_open'>Return open times</label><br />
+                     <input name='ret_close' id='ret_close' type='checkbox' value='close' /><label for='ret_close'>Return close times</label><br />
+                  </div>
+
+                  <div>
+                     <label for='ret_format'>Return format:</label><br />
+                     <select name='ret_format' id='ret_format'>
+                        <option value='' selected>NULL</option>
+                        <option value='json'>JSON</option>
+                        <option value='csv'>CSV</option>
+                     </select>
+                  </div>
+
+                  <div>
+                     <label for='query_size'>Max query size:</label><br />
+                     <input name='query_size' id='query_size' type='number' min='0' step='1'></input><br />
+                  </div>
+
+                  <div>
+                     <button type='button' name='submit'>Submit Request</button>
+                  </div>
+               </form>
+            </div>
+            <div class='col-sm-8'>
+               <h2>Last query:</h2>
+               <p id='query_url' name='query_url'>
+               <h2>Results:</h2>
+               <p id='result' name='result'></p>
+            </div>
+         </div>
+      </div>
+
+      <script>
+         var QUERY_TYPE_OPEN = 1;
+         var QUERY_TYPE_CLOSE = 2;
+
+         $(document).ready(function() {
+
+            $("form").submit(function(e) {
+               e.preventDefault();
+            });
+
+            /// Post to 
+            $("button[name='submit']").click(function() {
+               var query_type = 0;
+               if($("input[name='ret_open']").prop("checked")) {
+                  query_type |= QUERY_TYPE_OPEN;
+               }
+               if($("input[name='ret_close']").prop("checked")) {
+                  query_type |= QUERY_TYPE_CLOSE;
+               }
+
+               switch(query_type) {
+                  case QUERY_TYPE_OPEN:
+                     query_type = 'listOpenOnly';
+                     break;
+                  case QUERY_TYPE_CLOSE:
+                     query_type = 'listCloseOnly';
+                     break;
+                  case (QUERY_TYPE_OPEN | QUERY_TYPE_CLOSE):
+                     query_type = 'listAll';
+                     break;
+                  default:
+                     console.log('Invalid query type selected');
+                     $("p[name='result']").text("No query type selected");
+                     return;
+               }
+
+               var target_url = `/test_api/${query_type}`;
+            
+               var ret_format = $("select[name='ret_format']").val();
+               if(ret_format != '') {
+                  target_url = `${target_url}/${ret_format}`;
+               }
+
+               var query_size = $("input[name='query_size']").val();
+               if(isNaN(query_size)) {
+                  query_size = parseInt(query_size.trim());
+               }
+
+               console.log(`Submitting query at ${target_url} with max size ${query_size}`);
+               $.get(target_url, (isNaN(query_size) || query_size === '') ? null : {'top': query_size},
+                  function(data) {
+                     console.log(`Returned data: ${data}`);
+                     $("p[name='query_url']").text(target_url + ((isNaN(query_size) || query_size ==='') ? '' : `/?top=${query_size}`));
+                     $("p[name='result']").text(data);
+               });
+            });
+
+         });
+
+      </script>
+   </body>
+</html>
+

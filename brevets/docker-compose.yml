@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+    # Core:
+    restapi:
+        build: api/
+        command: python -u rest_api.py
+        ports:
+            - '5000:5000'
+        depends_on:
+            - ourdb
+        environment:
+            MONGODB_HOSTNAME: ourdb
+
+    brevetsapp: 
+        build: brevetsapp/
+        command: python -u flask_brevets.py
+        ports:
+            - '5001:5000'
+        depends_on:
+            - restapi
+        environment:
+            RESTAPI_HOSTNAME: restapi
+            RESTAPI_PORT: 5000
+
+    website:
+        build: website/
+        command: python -u api_test.py
+        ports:
+            - '5002:5000' # Exposes the api test interface
+        depends_on:
+            - restapi
+        environment:
+            RESTAPI_HOSTNAME: restapi
+            RESTAPI_PORT: 5000
+
+    # External:
+    ourdb:
+        image: mongo:latest
+
