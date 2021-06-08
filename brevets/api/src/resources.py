@@ -3,6 +3,7 @@ import flask
 from flask import Flask, request, Response
 from flask_restful import Resource
 from bson.objectid import ObjectId
+from src.auth import verify_auth_token
 
 # Database access resource
 # '/base/<ret_format:str>'
@@ -29,16 +30,22 @@ class DB_Fetch(Resource):
 
     def get(self, ret_format: str = None):
         self.app.logger.debug('DB_Fetch handler recieved GET request')
+
+        token = request.args.get('token', None, type=str)
+        authorized, token_data = verify_auth_token(token, self.app.secret_key)
+        if not authorized:
+            return token_data, 401
+
         if ret_format is None:
             ret_format = self.default_format
 
         formatter = self.formatters.get(ret_format, None)
         if not callable(formatter):
             self.app.logger.debug('\tDB_Fetch handler does not support return format {}'.format(ret_format))
-            return "", 501 # Return format is not supported
+            return Response('Invalid return format.', 501) # Return format is not supported
 
         max_num = request.args.get('top', 0, type=int)
-        cursor = self.target_db.find(projection = self.projection, limit = max_num)
+        cursor = self.target_db.find({'username': token_data['username']}, projection = self.projection, limit = max_num)
         if not self.sort_key is None:
             cursor = cursor.sort(self.sort_key, 1)
 
@@ -60,31 +67,47 @@ class DB_Access(Resource):
 
     def get(self, uid: str = None):
         self.app.logger.debug('DB_Access handler recieved GET request')
+
+        token = request.args.get('token', None, type=str)
+        authorized, token_data = verify_auth_token(token, self.app.secret_key)
+        if not authorized:
+            return token_data, 401
+
         if uid is None or uid == 'all':
-            result = self.target_db.find(projection=self.projection)
+            result = self.target_db.find({'username': token_data['username']}, projection=self.projection)
             if not self.sort_key is None:
                 result = result.sort(self.sort_key, 1)
             result = list(result)
         else:
-            result = self.target_db.find_one({'_id': ObjectId(uid)}, self.projection)
+            result = self.target_db.find_one({'_id': ObjectId(uid), 'username': token_data['username']}, self.projection)
         return Response(json.dumps(result), 200)
 
     def post(self, uid: str = None):
         self.app.logger.debug('DB_Access handler recieved POST request')
-        to_insert = request.form.get('data', None, type=str)
 
+        token = request.form.get('token', None, type=str)
+        authorized, token_data = verify_auth_token(token, self.app.secret_key)
+        if not authorized:
+            return token_data, 401
+
+        to_insert = request.form.get('data', None, type=str)
         if to_insert is None:
             self.app.logger.debug('\tPOST request had no data')
-            return "", 400
+            return Response('Empty POST request.', 400)
 
         json_data = json.loads(to_insert)
         if isinstance(json_data, list):
-            result = [self._insert(thing_to_insert) for thing_to_insert in json_data]
+            username = token_data['username']
+            result = []
+            for thing_to_insert in json_data:
+                thing_to_insert['username'] = username
+                result.append(self._insert(thing_to_insert))
         elif isinstance(json_data, dict):
+            json_data['username'] = token_data['username']
             result = self._insert(json_data, uid)
         else:
             self.app.logger.debug('\tJson data was malformatted')
-            return "", 400
+            return Response('Malformatted JSON data.', 400)
 
         self.app.logger.debug('\tFinished handling POST Request: {}'.format(result))
         return json.dumps(result), 200

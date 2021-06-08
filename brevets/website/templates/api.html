@@ -37,7 +37,32 @@
          <hr />
          <div class='row'>
             <div class='col-sm-4 form-holder'>
-               <form>
+               <!-- Login/Logout/Register Form-->
+               <form name='login' method="post" class='req_nauth' style="display: {{ 'none' if current_user.is_authenticated else 'block' }};" novalidate>
+                  {{ login_form.hidden_tag() }}
+                  <div class='form-group'>
+                     <label class='form-check-label' for='username'>{{ login_form.username.label }}</label>
+                     {{ login_form.username(size=32, class='form-control', id='username') }}
+                     <label class='form-check-label' for='password'>{{ login_form.password.label }}</label>
+                     {{ login_form.password(size=32, class='form-control', id='password') }}
+                  </div>
+                  <div class='form-group'>
+                     {{ login_form.remember(class='form-check-input', id='remember', value='false') }}
+                     <label class='form-check-label' for='remember'>{{ login_form.remember.label }}</label>
+                  </div>
+                  <div>
+                     <button class='btn btn-outline-primary' type='button' name='login' id='login'>Login</button>
+                     <button class='btn btn-outline-primary' type='button' name='register' id='register'>Register</button>
+                  </div>
+               </form>
+               <form name='logout' method='post' class='req_auth' style="display: {{ 'block' if current_user.is_authenticated else 'none' }};" novalidate>
+                  <button class='btn btn-outline-primary' type='button' name='logout' id='logout'>Logout</button>
+               </form>
+
+               <p name='login-msg'></p>
+               <hr />
+
+               <form name='api_test' class='req_auth' style="display: {{ 'block' if current_user.is_authenticated else 'none' }};" >
                   <div>
                      <label>Return values:</label><br />
                      <input name='ret_open' id='ret_open' type='checkbox' value='open' /><label for='ret_open'>Return open times</label><br />
@@ -80,6 +105,55 @@
 
             $("form").submit(function(e) {
                e.preventDefault();
+            });
+
+            $("button[name='register']").click(function() {
+               $.post({
+                  url: '/register',
+                  data: $("form[name='login']").serialize(),
+                  beforeSend: function(ajax_object, settings) {
+                     ajax_object.setRequestHeader('X-CSRFToken', "{{ login_form.csrf_token._value() }}");
+                  }
+
+               }).done(function(data) {
+                  console.log('Registered');
+                  $("p[name='login-msg']").text('You have registered');
+
+               }).fail(function(data) {
+                  console.log('Failed to register');
+                  console.log(`Result data: ${JSON.stringify(data)}`);
+                  $("p[name='login-msg']").text(data.responseText);
+               });
+            });
+
+            $("button[name='login']").click(function() {
+               $.post({
+                  url: '/login',
+                  data: $("form[name='login']").serialize(),
+                  beforeSend: function(ajax_object, settings) {
+                     ajax_object.setRequestHeader('X-CSRFToken', "{{ login_form.csrf_token._value() }}");
+                  }
+
+               }).done(function(data) {
+                  console.log(`Logged in`);
+                  $("p[name='login-msg']").text('Logged in');
+                  $(".req_auth").show();
+                  $(".req_nauth").hide();
+
+               }).fail(function(data) {
+                  console.log('Failed to log in');
+                  console.log(`Result data: ${JSON.stringify(data)}`);
+                  $("p[name='login-msg']").text(data.responseText);
+               });
+            });
+
+            $("button[name='logout']").click(function() {
+               $.post('/logout').done(function() {
+                  console.log(`Logged out`);
+                  $("p[name='login-msg']").text('Logged out');
+                  $(".req_auth").hide();
+                  $(".req_nauth").show();
+               });
             });
 
             /// Post to 

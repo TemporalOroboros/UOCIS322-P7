@@ -87,8 +87,8 @@ def index():
 @app.route("/secret")
 @login_required
 def secret():
-    flash(f"Your date of birth is: {current_user.dob}")
-    flash(f"Your SSN is: {current_user.ssn}")
+    flash("Your date of birth is: {current_user.dob}".format(current_user.dob))
+    flash("Your SSN is: {current_user.ssn}".format(current_user.ssn))
     return render_template("index.html")
 
 

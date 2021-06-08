@@ -1,2 +1,5 @@
-flask
+Flask
+Flask-Login
 requests
+wtforms
+Flask-WTF
