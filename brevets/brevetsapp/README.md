@@ -16,6 +16,7 @@ Provides a lightweight webserver for a RUSA ACP controle time calculator with fl
 
 Contains a table of with columns for distance, location, and opening/closing times for each controle.
 Entering data into the distance columns will autofill the opening and closing times for that controle.
+If a user is logged in they can store and view ACP controle times through the form on the main page.
 
 ## Breakdown
 

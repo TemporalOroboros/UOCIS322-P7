@@ -38,6 +38,10 @@ where the path\_suffix, URL\_params, and the `/` preceding them are optional.
   - Indicates that only the open times for each controle should be fetched from the database.
 - /listCloseOnly:
   - Indicates that only the close times for each controle should be fetched from the database.
+- /register
+  - Register a new user in the given database
+- /token
+  - Retrieve an authentication token given a valid username/password pair
 
 ### Path Suffixes:
 

@@ -21,7 +21,7 @@
 ## Overview
 
 The API Test Website provides a simple interface for the RESTful API module.
-It provides the ability to make customized requests to the API.
+It provides the ability to make customized requests to the API provided the user is logged in.
 The data retrieved by the most recent request is displayed in the page to the right.
 
 Options:
