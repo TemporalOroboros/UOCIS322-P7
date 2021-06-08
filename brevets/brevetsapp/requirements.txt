@@ -1,5 +1,8 @@
 arrow
 flask
 flask_restful
+Flask-Login
+Flask-WTF
+wtforms
 pymongo
 requests

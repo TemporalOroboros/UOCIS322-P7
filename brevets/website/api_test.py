@@ -47,8 +47,8 @@ class User(UserMixin):
 # Pageserver
 ##
 
-@app.route("/")
 @app.route("/index")
+@app.route("/")
 def serve_index():
     app.logger.debug('Now serving index page')
     login_form = LoginForm()
